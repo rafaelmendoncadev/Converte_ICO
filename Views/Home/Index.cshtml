@@ -3,6 +3,27 @@
     ViewData["Title"] = "Conversor de Imagens para ICO";
 }
 
+<!-- Hero / Landing CTA -->
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold">Converta suas imagens para .ICO em segundos</h1>
+                <p class="lead text-muted">Conversor gratuito, rápido e seguro. Faça upload de PNG, JPG, JPEG ou SVG e gere ícones multi-resolução.</p>
+                <p class="mb-4">Cadastre-se gratuitamente para recursos adicionais, histórico de conversões e suporte prioritário.</p>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-primary btn-lg" asp-area="Identity" asp-page="/Account/Register">Registrar-se grátis</a>
+                    <a class="btn btn-outline-secondary btn-lg" asp-controller="Home" asp-action="Index">Usar sem registrar</a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center d-none d-lg-block">
+                <img src="~/images/hero-ico.svg" alt="Conversor ICO" class="img-fluid" style="max-height: 240px;" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Existing content -->
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-lg-10">
@@ -151,7 +172,7 @@
                         <div class="mt-4">
                             <div class="card border-success">
                                 <div class="card-header bg-success text-white">
-                                    <h5 class="mb-0"><i class="fas fa-download me-2"></i>Baixar ICO</h5>
+                                    <h5 class="mb-0"><i class="fas fa-download me-2"></i>Download</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="row align-items-center">
