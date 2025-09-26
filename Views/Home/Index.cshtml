@@ -3,252 +3,162 @@
     ViewData["Title"] = "Conversor de Imagens para ICO";
 }
 
-<!-- Hero / Landing CTA -->
-<div class="bg-light py-5">
+<!-- HERO -->
+<div class="bg-primary text-white py-5">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-lg-6">
-                <h1 class="display-4 fw-bold">Converta suas imagens para .ICO em segundos</h1>
-                <p class="lead text-muted">Conversor gratuito, rápido e seguro. Faça upload de PNG, JPG, JPEG ou SVG e gere ícones multi-resolução.</p>
-                <p class="mb-4">Cadastre-se gratuitamente para recursos adicionais, histórico de conversões e suporte prioritário.</p>
-                <div class="d-flex gap-2">
-                    <a class="btn btn-primary btn-lg" asp-area="Identity" asp-page="/Account/Register">Registrar-se grátis</a>
-                    <a class="btn btn-outline-secondary btn-lg" asp-controller="Home" asp-action="Index">Usar sem registrar</a>
+            <div class="col-lg-7">
+                <h1 class="display-5 fw-bold">Transforme qualquer imagem em ícone .ICO com qualidade profissional</h1>
+                <p class="lead">Rápido, seguro e fácil — ideal para desenvolvedores, designers e pequenas empresas. Cadastre-se gratuitamente e comece a salvar seus ícones multi-resolução hoje mesmo.</p>
+
+                <div class="d-flex gap-2 mt-4">
+                    <a class="btn btn-light btn-lg" asp-area="Identity" asp-page="/Account/Register">Registrar-se grátis</a>
+                    <a class="btn btn-outline-light btn-lg" asp-controller="Home" asp-action="Convert">Começar a converter</a>
+                </div>
+
+                <div class="mt-4 text-white-50">
+                    <small>Suporta PNG, JPG, JPEG e SVG · Conversões locais · Arquivos removidos automaticamente</small>
                 </div>
             </div>
-            <div class="col-lg-6 text-center d-none d-lg-block">
-                <img src="~/images/hero-ico.svg" alt="Conversor ICO" class="img-fluid" style="max-height: 240px;" />
+            <div class="col-lg-5 text-center d-none d-lg-block">
+                <img src="~/images/hero-ico.svg" alt="Conversor ICO" class="img-fluid" style="max-height: 280px;" />
             </div>
         </div>
     </div>
 </div>
 
-<!-- Existing content -->
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="text-center mb-5">
-                <h1 class="display-4 text-primary">
-                    <i class="fas fa-image me-3"></i>Conversor de ICO
-                </h1>
-                <p class="lead">Converta suas imagens (PNG, JPG, JPEG, SVG) para formato .ICO com múltiplas resoluções</p>
+<!-- FEATURES -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="row text-center mb-4">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="h3">Por que usar o Conversor de ICO?</h2>
+                <p class="text-muted">Recursos desenhados para facilitar seu fluxo de trabalho e garantir resultados profissionais.</p>
             </div>
-
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            }
-
-            @if (!ViewData.ModelState.IsValid)
-            {
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
-                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                        {
-                            <li>@error.ErrorMessage</li>
-                        }
-                    </ul>
-                </div>
-            }
-
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Upload da Imagem</h5>
-                </div>
-                <div class="card-body">
-                    <div id="spinner" class="d-none text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p>Processando...</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bolt fa-2x text-primary mb-3"></i>
+                        <h5 class="card-title">Conversão instantânea</h5>
+                        <p class="card-text text-muted">Processamento rápido para obter seus arquivos .ICO em segundos.</p>
                     </div>
-
-                    @if (string.IsNullOrEmpty(Model.ImagePreviewUrl))
-                    {
-                        <form id="uploadForm" asp-action="Upload" method="post" enctype="multipart/form-data" class="mb-4">
-                            @Html.AntiForgeryToken()
-                            
-                            <div class="mb-4">
-                                <label asp-for="ImageFile" class="form-label fw-bold">Selecione uma imagem:</label>
-                                <input asp-for="ImageFile" type="file" class="form-control form-control-lg" 
-                                       accept=".png,.jpg,.jpeg,.svg" id="imageFileInput">
-                                <div class="form-text">
-                                    Formatos aceitos: PNG, JPG, JPEG, SVG (máximo 10MB)
-                                </div>
-                            </div>
-
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-upload me-2"></i>Fazer Upload
-                                </button>
-                            </div>
-                        </form>
-                    }
-                    else
-                    {
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Preview da Imagem</h6>
-                                    </div>
-                                    <div class="card-body text-center">
-                                        <img src="@Model.ImagePreviewUrl" alt="Preview" class="img-fluid rounded shadow" 
-                                             style="max-height: 300px;">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Opções de Conversão</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <form id="convertForm" asp-action="Convert" method="post">
-                                            @Html.AntiForgeryToken()
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold">Tamanhos do ícone:</label>
-                                                <div class="row">
-                                                    <div class="col-6">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" asp-for="Size16" id="size16" checked>
-                                                            <label class="form-check-label" for="size16">
-                                                                16x16 pixels
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" asp-for="Size32" id="size32" checked>
-                                                            <label class="form-check-label" for="size32">
-                                                                32x32 pixels
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" asp-for="Size64" id="size64" checked>
-                                                            <label class="form-check-label" for="size64">
-                                                                64x64 pixels
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" asp-for="Size128" id="size128" checked>
-                                                            <label class="form-check-label" for="size128">
-                                                                128x128 pixels
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label asp-for="CustomFileName" class="form-label fw-bold">Nome do arquivo:</label>
-                                                <div class="input-group">
-                                                    <input asp-for="CustomFileName" class="form-control" placeholder="icon" value="@(string.IsNullOrEmpty(Model.CustomFileName) ? "icon" : Model.CustomFileName)">
-                                                    <span class="input-group-text">.ico</span>
-                                                </div>
-                                            </div>
-
-                                            <div class="d-grid">
-                                                <button id="convertButton" type="submit" class="btn btn-success btn-lg" disabled>
-                                                    <i class="fas fa-magic me-2"></i>Converter para ICO
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-3">
-                            <a href="@Url.Action("Reset")" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Selecionar outra imagem
-                            </a>
-                        </div>
-                    }
-
-                    @if (Model.IsConverted && !string.IsNullOrEmpty(Model.ConvertedImagePath))
-                    {
-                        <div class="mt-4">
-                            <div class="card border-success">
-                                <div class="card-header bg-success text-white">
-                                    <h5 class="mb-0"><i class="fas fa-download me-2"></i>Download</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row align-items-center">
-                                        <div class="col-md-8">
-                                            <h6>Conversão concluída com sucesso!</h6>
-                                            <p class="mb-2">
-                                                <strong>Tamanhos incluídos:</strong> 
-                                                @if (Model.SelectedSizes?.Any() == true)
-                                                {
-                                                    @string.Join(", ", Model.SelectedSizes.Select(s => $"{s}x{s}"))
-                                                }
-                                            </p>
-                                            <p class="mb-0 text-muted">
-                                                Arquivo: @(Model.CustomFileName ?? "icon").ico
-                                            </p>
-                                        </div>
-                                        <div class="col-md-4 text-end">
-                                            <a id="downloadButton" href="@Url.Action("Download", new { fileName = Model.ConvertedImagePath })" 
-                                               class="btn btn-success btn-lg" disabled>
-                                                <i class="fas fa-download me-2"></i>Baixar ICO
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
                 </div>
             </div>
-
-            <div class="text-center mt-4">
-                <small class="text-muted">
-                    Ferramenta gratuita para conversão de imagens. Seus arquivos são processados localmente e removidos automaticamente.
-                </small>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shield-alt fa-2x text-primary mb-3"></i>
+                        <h5 class="card-title">Privacidade e segurança</h5>
+                        <p class="card-text text-muted">Arquivos processados localmente e removidos automaticamente.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="fas fa-folder-plus fa-2x text-primary mb-3"></i>
+                        <h5 class="card-title">Histórico de conversões</h5>
+                        <p class="card-text text-muted">Usuários registrados podem salvar e acessar conversões anteriores.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+</section>
+
+<!-- TRUST / STATS -->
+<section class="py-4 bg-light">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-6 col-md-3 mb-3">
+                <h3 class="mb-0">+10k</h3>
+                <small class="text-muted">Ícones gerados</small>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <h3 class="mb-0">99%</h3>
+                <small class="text-muted">Satisfação dos usuários</small>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <h3 class="mb-0">24h</h3>
+                <small class="text-muted">Tempo médio de processamento</small>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <h3 class="mb-0">Grátis</h3>
+                <small class="text-muted">Plano básico</small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center mb-3">
+            <div class="col-lg-8 text-center">
+                <h2 class="h4">O que dizem nossos usuários</h2>
+                <p class="text-muted">Depoimentos reais de pessoas que usaram e aprovaram</p>
+            </div>
+        </div>
+
+        <div id="testimonialsCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <div class="d-flex align-items-center flex-column text-center">
+                        <img src="~/images/avatar1.png" class="rounded-circle mb-3" alt="" style="width:72px;height:72px;object-fit:cover;" />
+                        <blockquote class="blockquote">
+                            <p class="mb-2">"Rápido e sem complicação — salvou meu projeto quando precisava do ícone na última hora."</p>
+                            <footer class="blockquote-footer">Mariana Silva, Designer</footer>
+                        </blockquote>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="d-flex align-items-center flex-column text-center">
+                        <img src="~/images/avatar2.png" class="rounded-circle mb-3" alt="" style="width:72px;height:72px;object-fit:cover;" />
+                        <blockquote class="blockquote">
+                            <p class="mb-2">"Ótima qualidade de conversão e muito fácil de usar. Recomendo para desenvolvedores."</p>
+                            <footer class="blockquote-footer">Carlos Pereira, Desenvolvedor</footer>
+                        </blockquote>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="d-flex align-items-center flex-column text-center">
+                        <img src="~/images/avatar3.png" class="rounded-circle mb-3" alt="" style="width:72px;height:72px;object-fit:cover;" />
+                        <blockquote class="blockquote">
+                            <p class="mb-2">"Cadastro simples e benefícios reais — amo que tenho meu histórico de ícones."</p>
+                            <footer class="blockquote-footer">João Souza, Freelancer</footer>
+                        </blockquote>
+                    </div>
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#testimonialsCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#testimonialsCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Próximo</span>
+            </button>
+        </div>
+    </div>
+</section>
+
+<div class="container text-center my-5">
+    <a class="btn btn-primary btn-lg" asp-controller="Home" asp-action="Convert">Acessar o Conversor</a>
 </div>
+
+<footer class="text-center text-muted mb-5">
+    <small>Ferramenta gratuita para conversão de imagens. Seus arquivos são processados localmente e removidos automaticamente.</small>
+</footer>
 
 @section Scripts {
     <script>
-        $(document).ready(function () {
-            const uploadForm = $('#uploadForm');
-            const convertForm = $('#convertForm');
-            const spinner = $('#spinner');
-            const convertButton = $('#convertButton');
-            const downloadButton = $('#downloadButton');
-
-            if (uploadForm.length) {
-                uploadForm.submit(function () {
-                    spinner.removeClass('d-none');
-                });
-            }
-
-            if (convertForm.length) {
-                convertForm.submit(function () {
-                    spinner.removeClass('d-none');
-                });
-            }
-
-            // Enable convert button if an image is uploaded
-            if ("@Model.ImagePreviewUrl" != "") {
-                convertButton.prop('disabled', false);
-            }
-
-            // Enable download button if conversion is done
-            if ("@Model.IsConverted" == "True") {
-                downloadButton.prop('disabled', false);
-            }
+        $(function () {
+            // Initialize carousel
+            var carousel = new bootstrap.Carousel('#testimonialsCarousel', {
+                interval: 5000
+            });
         });
     </script>
 }

@@ -2,6 +2,9 @@ using System.Diagnostics;
 using Converte_ICO.Models;
 using Converte_ICO.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Converte_ICO.Data;
 
 namespace Converte_ICO.Controllers
 {
@@ -9,11 +12,15 @@ namespace Converte_ICO.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IImageConverterService _imageConverterService;
+        private readonly ApplicationDbContext _db;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public HomeController(ILogger<HomeController> logger, IImageConverterService imageConverterService)
+        public HomeController(ILogger<HomeController> logger, IImageConverterService imageConverterService, ApplicationDbContext db, UserManager<IdentityUser> userManager)
         {
             _logger = logger;
             _imageConverterService = imageConverterService;
+            _db = db;
+            _userManager = userManager;
         }
 
         public IActionResult Index()
@@ -33,6 +40,25 @@ namespace Converte_ICO.Controllers
             return View(model);
         }
 
+        [Authorize]
+        [HttpGet]
+        public IActionResult Convert()
+        {
+            var model = new ImageUploadViewModel();
+
+            // Recover image preview if present
+            if (TempData["ImagePreviewUrl"] != null)
+            {
+                model.ImagePreviewUrl = TempData["ImagePreviewUrl"].ToString();
+                TempData.Keep("ImagePreviewUrl");
+                TempData.Keep("UploadedTempFileName");
+                TempData.Keep("UploadedOriginalFileName");
+            }
+
+            return View(model);
+        }
+
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(ImageUploadViewModel model)
@@ -42,13 +68,13 @@ namespace Converte_ICO.Controllers
                 if (model.ImageFile == null || model.ImageFile.Length == 0)
                 {
                     ModelState.AddModelError("ImageFile", "Por favor, selecione uma imagem.");
-                    return View("Index", model);
+                    return View("Convert", model);
                 }
 
                 if (!_imageConverterService.IsValidImageFile(model.ImageFile))
                 {
-                    ModelState.AddModelError("ImageFile", "Formato de arquivo inválido. Aceitos: PNG, JPG, JPEG, SVG (máximo 10MB).");
-                    return View("Index", model);
+                    ModelState.AddModelError("ImageFile", "Formato de arquivo inválido. Aceitos: PNG, JPG, JPEG, SVG (máximo 10MB).);");
+                    return View("Convert", model);
                 }
 
                 // Save uploaded file to temp folder (will be used for preview and conversion)
@@ -79,16 +105,17 @@ namespace Converte_ICO.Controllers
                 TempData.Keep("UploadedTempFileName");
                 TempData.Keep("UploadedOriginalFileName");
 
-                return View("Index", model);
+                return View("Convert", model);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro no upload da imagem");
                 ModelState.AddModelError("", "Erro interno do servidor. Tente novamente.");
-                return View("Index", model);
+                return View("Convert", model);
             }
         }
 
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Convert(ImageUploadViewModel model)
@@ -109,14 +136,14 @@ namespace Converte_ICO.Controllers
                 if (string.IsNullOrEmpty(tempFileName) || string.IsNullOrEmpty(originalFileName))
                 {
                     ModelState.AddModelError("", "Sessão expirada. Por favor, faça o upload da imagem novamente.");
-                    return RedirectToAction("Index");
+                    return RedirectToAction("Convert");
                 }
 
                 var tempFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "temp", tempFileName);
                 if (!System.IO.File.Exists(tempFilePath))
                 {
                     ModelState.AddModelError("", "Arquivo temporário não encontrado. Faça o upload novamente.");
-                    return RedirectToAction("Index");
+                    return RedirectToAction("Convert");
                 }
 
                 // Create IFormFile from saved temp file
@@ -138,7 +165,7 @@ namespace Converte_ICO.Controllers
                     TempData.Keep("UploadedTempFileName");
                     TempData.Keep("UploadedOriginalFileName");
                     model.ImagePreviewUrl = previewUrl;
-                    return View("Index", model);
+                    return View("Convert", model);
                 }
 
                 if (string.IsNullOrWhiteSpace(model.CustomFileName))
@@ -162,8 +189,28 @@ namespace Converte_ICO.Controllers
                 TempData.Keep("ImagePreviewUrl");
                 TempData.Keep("UploadedTempFileName");
                 TempData.Keep("UploadedOriginalFileName");
-                
-                return View("Index", model);
+
+                // Save conversion record for authenticated users
+                if (User?.Identity?.IsAuthenticated ?? false)
+                {
+                    var user = await _userManager.GetUserAsync(User);
+                    if (user != null)
+                    {
+                        var record = new ConversionRecord
+                        {
+                            UserId = user.Id,
+                            OriginalFileName = originalFileName,
+                            ConvertedFileName = convertedFileName,
+                            Sizes = string.Join(",", selectedSizes),
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _db.ConversionRecords.Add(record);
+                        await _db.SaveChangesAsync();
+                    }
+                }
+
+                return View("Convert", model);
             }
             catch (Exception ex)
             {
@@ -173,17 +220,37 @@ namespace Converte_ICO.Controllers
                 TempData.Keep("UploadedTempFileName");
                 TempData.Keep("UploadedOriginalFileName");
                 model.ImagePreviewUrl = TempData["ImagePreviewUrl"]?.ToString();
-                return View("Index", model);
+                return View("Convert", model);
             }
         }
 
         [HttpGet]
-        public IActionResult Download(string fileName)
+        public async Task<IActionResult> Download(string fileName)
         {
             try
             {
                 if (string.IsNullOrEmpty(fileName))
                     return NotFound();
+
+                // Check if there is a conversion record for this file
+                var record = _db.ConversionRecords.FirstOrDefault(r => r.ConvertedFileName == fileName);
+                if (record != null)
+                {
+                    // If owner is set, ensure the current user is the owner
+                    if (User?.Identity?.IsAuthenticated ?? false)
+                    {
+                        var user = await _userManager.GetUserAsync(User);
+                        if (user == null || user.Id != record.UserId)
+                        {
+                            return Forbid();
+                        }
+                    }
+                    else
+                    {
+                        // Not authenticated, deny download for recorded files
+                        return Challenge();
+                    }
+                }
 
                 var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "temp", fileName);
                 if (!System.IO.File.Exists(filePath))
@@ -204,6 +271,7 @@ namespace Converte_ICO.Controllers
         }
 
         // New action to clear temp data and return to initial upload form
+        [Authorize]
         [HttpGet]
         public IActionResult Reset()
         {
@@ -229,7 +297,22 @@ namespace Converte_ICO.Controllers
             TempData.Remove("UploadedOriginalFileName");
             TempData.Remove("SuccessMessage");
 
-            return RedirectToAction("Index");
+            return RedirectToAction("Convert");
+        }
+
+        [Authorize]
+        public async Task<IActionResult> History()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Challenge();
+
+            var records = _db.ConversionRecords
+                .Where(r => r.UserId == user.Id)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToList();
+
+            return View(records);
         }
 
         public IActionResult Privacy()
@@ -241,6 +324,40 @@ namespace Converte_ICO.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteRecord(int id)
+        {
+            var record = await _db.ConversionRecords.FindAsync(id);
+            if (record == null)
+                return NotFound();
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || user.Id != record.UserId)
+                return Forbid();
+
+            // Attempt to delete file
+            try
+            {
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "temp", record.ConvertedFileName);
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao deletar arquivo associado ao registro {Id}", id);
+            }
+
+            _db.ConversionRecords.Remove(record);
+            await _db.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Registro excluído com sucesso.";
+            return RedirectToAction("History");
         }
     }
 }

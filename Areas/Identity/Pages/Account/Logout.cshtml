@@ -1,0 +1,10 @@
+@page
+@model Converte_ICO.Areas.Identity.Pages.Account.LogoutModel
+@{
+    // Minimal logout page
+}
+
+<form id="logoutForm" method="post">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-link">Sair</button>
+</form>
